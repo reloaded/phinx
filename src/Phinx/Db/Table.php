@@ -45,6 +45,13 @@ class Table
     protected $name;
 
     /**
+     * The database that was explicitly specified.
+     *
+     * @var string
+     */
+    protected $database;
+    
+    /**
      * @var array
      */
     protected $options = array();
@@ -109,6 +116,45 @@ class Table
     }
 
     /**
+     * Explicitly sets the database. If the database isn't specified here the default database in the Phinx
+     * configuration will be used.
+     *
+     * @return $this
+     * @throws \InvalidArgumentException
+     */
+    public function setDatabase($database)
+    {
+        if((!is_string($database) && $database !== null) || (is_string($database) && strlen($database) < 1))
+        {
+            throw new \InvalidArgumentException(sprintf('Invalid database name specified: %s', $database));
+        }
+        $this->database = $database;
+
+        return $this;
+    }
+
+    /**
+     * Gets the database name that was explicitly set.
+     *
+     * @return string
+     */
+    public function getDatabase()
+    {
+        return $this->database;
+    }
+
+    /**
+     * Determines if the table has an explicitly defined database.
+     *
+     * @return bool
+     */
+    public function hasExplicitDatabase()
+    {
+        return $this->database !== null;
+    }
+    
+
+    /**
      * Sets the table options.
      *
      * @param array $options
@@ -159,7 +205,7 @@ class Table
      */
     public function exists()
     {
-        return $this->getAdapter()->hasTable($this->getName());
+        return $this->getAdapter()->hasTable($this->getName(), $this->getDatabase());
     }
 
     /**
@@ -169,19 +215,21 @@ class Table
      */
     public function drop()
     {
-        $this->getAdapter()->dropTable($this->getName());
+        $this->getAdapter()->dropTable($this->getName(), $this->getDatabase());
     }
 
     /**
      * Renames the database table.
      *
      * @param string $newTableName New Table Name
+     * @param string $newDatabase New Database Name
      * @return Table
      */
-    public function rename($newTableName)
+    public function rename($newTableName, $newDatabase = null)
     {
-        $this->getAdapter()->renameTable($this->getName(), $newTableName);
+        $this->getAdapter()->renameTable($this->getName(), $newTableName, $this->getDatabase(), $newDatabase);
         $this->setName($newTableName);
+        $this->setDatabase($newDatabase);
         return $this;
     }
 
@@ -205,7 +253,7 @@ class Table
      */
     public function getColumns()
     {
-        return $this->getAdapter()->getColumns($this->getName());
+        return $this->getAdapter()->getColumns($this->getName(), $this->getDatabase());
     }
 
     /**
@@ -339,7 +387,7 @@ class Table
      */
     public function removeColumn($columnName)
     {
-        $this->getAdapter()->dropColumn($this->getName(), $columnName);
+        $this->getAdapter()->dropColumn($this->getName(), $columnName, $this->getDatabase());
         return $this;
     }
 
@@ -352,7 +400,7 @@ class Table
      */
     public function renameColumn($oldName, $newName)
     {
-        $this->getAdapter()->renameColumn($this->getName(), $oldName, $newName);
+        $this->getAdapter()->renameColumn($this->getName(), $oldName, $newName, $this->getDatabase());
         return $this;
     }
 
@@ -379,8 +427,8 @@ class Table
         if (null === $newColumn->getName() || strlen($newColumn->getName()) == 0) {
             $newColumn->setName($columnName);
         }
-
-        $this->getAdapter()->changeColumn($this->getName(), $columnName, $newColumn);
+        
+        $this->getAdapter()->changeColumn($this->getName(), $columnName, $newColumn, $this->getDatabase());
         return $this;
     }
 
@@ -444,7 +492,7 @@ class Table
      */
     public function removeIndexByName($name)
     {
-        $this->getAdapter()->dropIndexByName($this->getName(), $name);
+        $this->getAdapter()->dropIndexByName($this->getName(), $name, $this->getDatabase());
         return $this;
     }
 
@@ -506,7 +554,7 @@ class Table
         if ($constraint) {
             $this->getAdapter()->dropForeignKey($this->getName(), array(), $constraint);
         } else {
-            $this->getAdapter()->dropForeignKey($this->getName(), $columns);
+            $this->getAdapter()->dropForeignKey($this->getName(), $columns, $this->getDatabase());
         }
 
         return $this;

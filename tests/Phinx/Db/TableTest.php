@@ -3,9 +3,71 @@
 namespace Test\Phinx\Db;
 
 use Phinx\Db\Adapter\MysqlAdapter;
+use Phinx\Db\Table;
 
 class TableTest extends \PHPUnit_Framework_TestCase
 {
+    public function testSetDatabaseToString()
+    {
+        $table = new Table('ntable');
+
+        $table->setDatabase('test_database');
+        $this->assertEquals('test_database', $table->getDatabase());
+
+        try
+        {
+            $table->setDatabase('');
+            $this->fail('Expected table to throw exception.');
+        }
+        catch(\InvalidArgumentException $e)
+        {
+            $this->assertInstanceOf(
+                'InvalidArgumentException',
+                $e,
+                'Expected exception of type InvalidArgumentException, got ' . get_class($e)
+            );
+            $this->assertEquals('Invalid database name specified: test_database', $e->getMessage());
+        }
+    }
+
+    public function testSetDatabaseToNull()
+    {
+        $table = new Table('ntable');
+        $table->setDatabase(null);
+        $this->assertNull($table->getDatabase());
+    }
+
+    public function testSetDatabaseToNonString()
+    {
+        $table = new Table('ntable');
+
+        try
+        {
+            $table->setDatabase(array());
+            $this->fail('Expected table to throw exception.');
+        }
+        catch(\InvalidArgumentException $e)
+        {
+            $this->assertInstanceOf(
+                'InvalidArgumentException',
+                $e,
+                'Expected exception of type InvalidArgumentException, got ' . get_class($e)
+            );
+            $this->assertEquals('Invalid database name specified: test_database', $e->getMessage());
+        }
+    }
+
+    public function testHasExplicitDatabase()
+    {
+        $table = new Table('ntable');
+
+        $table->setDatabase('test_database');
+        $this->assertTrue($table->hasExplicitDatabase());
+
+        $table->setDatabase(null);
+        $this->assertFalse($table->hasExplicitDatabase());
+    }
+
     public function testAddColumnWithNoAdapterSpecified()
     {
         try {
