@@ -250,10 +250,11 @@ interface AdapterInterface
      * Checks to see if a table exists.
      *
      * @param string $tableName Table Name
+     * @param null|string $database Database Name
      * @return boolean
      */
-    public function hasTable($tableName);
-
+    public function hasTable($tableName, $database);
+    
     /**
      * Creates the specified database table.
      *
@@ -267,35 +268,40 @@ interface AdapterInterface
      *
      * @param string $tableName Table Name
      * @param string $newName   New Name
+     * @param null|string $sourceDatabase Database Name
+     * @param null|string $targetDatabase Database Name
      * @return void
      */
-    public function renameTable($tableName, $newName);
-
+    public function renameTable($tableName, $newName, $sourceDatabase, $targetDatabase);
+    
     /**
      * Drops the specified database table.
      *
      * @param string $tableName Table Name
+     * @param null|string $database Database Name
      * @return void
      */
-    public function dropTable($tableName);
+    public function dropTable($tableName, $database);
 
     /**
      * Returns table columns
      *
      * @param string $tableName Table Name
+     * @param null|string $database Database Name
      * @return Column[]
      */
-    public function getColumns($tableName);
-
+    public function getColumns($tableName, $database);
+    
     /**
      * Checks to see if a column exists.
      *
      * @param string $tableName  Table Name
      * @param string $columnName Column Name
+     * @param null|string $database Database Name
      * @return boolean
      */
-    public function hasColumn($tableName, $columnName);
-
+    public function hasColumn($tableName, $columnName, $database);
+    
     /**
      * Adds the specified column to a database table.
      *
@@ -311,38 +317,42 @@ interface AdapterInterface
      * @param string $tableName Table Name
      * @param string $columnName Column Name
      * @param string $newColumnName New Column Name
+     * @param null|string $database Database Name
      * @return void
      */
-    public function renameColumn($tableName, $columnName, $newColumnName);
-
+    public function renameColumn($tableName, $columnName, $newColumnName, $database);
+    
     /**
      * Change a table column type.
      *
      * @param string $tableName  Table Name
      * @param string $columnName Column Name
      * @param Column $newColumn  New Column
+     * @param null|string $database Database Name
      * @return Table
      */
-    public function changeColumn($tableName, $columnName, Column $newColumn);
-
+    public function changeColumn($tableName, $columnName, Column $newColumn, $database);
+    
     /**
      * Drops the specified column.
      *
      * @param string $tableName Table Name
      * @param string $columnName Column Name
+     * @param null|string $database Database Name
      * @return void
      */
-    public function dropColumn($tableName, $columnName);
-
+    public function dropColumn($tableName, $columnName, $database);
+    
     /**
      * Checks to see if an index exists.
      *
      * @param string $tableName Table Name
      * @param mixed  $columns   Column(s)
+     * @param null|string $database Database Name
      * @return boolean
      */
-    public function hasIndex($tableName, $columns);
-
+    public function hasIndex($tableName, $columns, $database);
+    
     /**
      * Adds the specified index to a database table.
      *
@@ -357,18 +367,20 @@ interface AdapterInterface
      *
      * @param string $tableName
      * @param mixed  $columns Column(s)
+     * @param null|string $database Database Name
      * @return void
      */
-    public function dropIndex($tableName, $columns);
-
+    public function dropIndex($tableName, $columns, $database);
+    
     /**
      * Drops the index specified by name from a database table.
      *
      * @param string $tableName
      * @param string $indexName
+     * @param null|string $database Database Name
      * @return void
      */
-    public function dropIndexByName($tableName, $indexName);
+    public function dropIndexByName($tableName, $indexName, $database);
 
     /**
      * Checks to see if a foreign key exists.
@@ -376,9 +388,10 @@ interface AdapterInterface
      * @param string   $tableName
      * @param string[] $columns    Column(s)
      * @param string   $constraint Constraint name
+     * @param null|string $database Database Name
      * @return boolean
      */
-    public function hasForeignKey($tableName, $columns, $constraint = null);
+    public function hasForeignKey($tableName, $columns, $constraint = null, $database);
 
     /**
      * Adds the specified foreign key to a database table.
@@ -395,9 +408,10 @@ interface AdapterInterface
      * @param string   $tableName
      * @param string[] $columns    Column(s)
      * @param string   $constraint Constraint name
+     * @param null|string $database Database Name
      * @return void
      */
-    public function dropForeignKey($tableName, $columns, $constraint = null);
+    public function dropForeignKey($tableName, $columns, $constraint = null, $database);
 
     /**
      * Returns an array of the supported Phinx column types.
