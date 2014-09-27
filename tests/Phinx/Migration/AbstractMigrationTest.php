@@ -166,6 +166,8 @@ class AbstractMigrationTest extends \PHPUnit_Framework_TestCase
 
         $migrationStub->setAdapter($adapterStub);
         $this->assertTrue($migrationStub->hasTable('test_table'));
+        $this->assertTrue($migrationStub->hasTable('test_table', null));
+        $this->assertTrue($migrationStub->hasTable('test_table', 'test_database'));
     }
 
     public function testTableMethod()
@@ -192,5 +194,7 @@ class AbstractMigrationTest extends \PHPUnit_Framework_TestCase
 
         $migrationStub->setAdapter($adapterStub);
         $migrationStub->dropTable('test_table');
+        $migrationStub->dropTable('test_table', null);
+        $migrationStub->dropTable('test_table', 'test_database');
     }
 }
