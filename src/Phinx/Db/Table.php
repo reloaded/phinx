@@ -82,12 +82,14 @@ class Table
      * @param string $name Table Name
      * @param array $options Options
      * @param AdapterInterface $adapter Database Adapter
+     * @param null|string $database Database Name
      */
-    public function __construct($name, $options = array(), AdapterInterface $adapter = null)
+    public function __construct($name, $options = array(), AdapterInterface $adapter = null, $database = null)
     {
         $this->setName($name);
         $this->setOptions($options);
-
+        $this->setDatabase($database);
+        
         if (null !== $adapter) {
             $this->setAdapter($adapter);
         }
@@ -153,7 +155,6 @@ class Table
         return $this->database !== null;
     }
     
-
     /**
      * Sets the table options.
      *
@@ -165,17 +166,17 @@ class Table
         $this->options = $options;
         return $this;
     }
-
+    
     /**
      * Gets the table options.
-     *
+     * 
      * @return array
      */
     public function getOptions()
     {
         return $this->options;
     }
-
+    
     /**
      * Sets the database adapter.
      *
@@ -505,7 +506,7 @@ class Table
      */
     public function hasIndex($columns, $options = array())
     {
-        return $this->getAdapter()->hasIndex($this->getName(), $columns, $options);
+        return $this->getAdapter()->hasIndex($this->getName(), $columns, $options, $this->getDatabase());
     }
 
     /**

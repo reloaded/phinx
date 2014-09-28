@@ -146,10 +146,9 @@ class MysqlAdapterTest extends \PHPUnit_Framework_TestCase
     {
         $db = $this->options['explicit_db'];
 
-        $table = new \Phinx\Db\Table('ntable', array(), $this->adapter);
+        $table = new \Phinx\Db\Table('ntable', array(), $this->adapter, $db);
         $table->addColumn('realname', 'string')
               ->addColumn('email', 'integer')
-              ->setDatabase($db)
               ->save();
         $this->assertTrue($this->adapter->hasTable('ntable', $db));
         $this->assertTrue($this->adapter->hasColumn('ntable', 'id', $db));
@@ -260,10 +259,9 @@ class MysqlAdapterTest extends \PHPUnit_Framework_TestCase
             'id'            => false,
             'primary_key'   => array('user_id', 'tag_id')
         );
-        $table = new \Phinx\Db\Table('table1', $options, $this->adapter);
+        $table = new \Phinx\Db\Table('table1', $options, $this->adapter, $db);
         $table->addColumn('user_id', 'integer')
               ->addColumn('tag_id', 'integer')
-              ->setDatabase($db)
               ->save();
         $this->assertTrue($this->adapter->hasIndex('table1', array('user_id', 'tag_id'), $db));
         $this->assertTrue($this->adapter->hasIndex('table1', array('tag_id', 'USER_ID'), $db));
@@ -462,9 +460,8 @@ class MysqlAdapterTest extends \PHPUnit_Framework_TestCase
     public function testRenameColumnInExplicitDatabase()
     {
         $db = $this->options['explicit_db'];
-        $table = new \Phinx\Db\Table('t', array(), $this->adapter);
+        $table = new \Phinx\Db\Table('t', array(), $this->adapter, $db);
         $table->addColumn('column1', 'string')
-              ->setDatabase($db)
               ->save();
         $this->assertTrue($this->adapter->hasColumn('t', 'column1', $db));
         $this->assertFalse($this->adapter->hasColumn('t', 'column2', $db));
@@ -513,9 +510,8 @@ class MysqlAdapterTest extends \PHPUnit_Framework_TestCase
     public function testChangeColumnInExplicitDatabase()
     {
         $db = $this->options['explicit_db'];
-        $table = new \Phinx\Db\Table('t', array(), $this->adapter);
+        $table = new \Phinx\Db\Table('t', array(), $this->adapter, $db);
         $table->addColumn('column1', 'string')
-              ->setDatabase($db)
               ->save();
         $this->assertTrue($this->adapter->hasColumn('t', 'column1', $db));
         $newColumn1 = new \Phinx\Db\Table\Column();
@@ -666,9 +662,8 @@ class MysqlAdapterTest extends \PHPUnit_Framework_TestCase
     public function testDropColumnInExplicitDatabase()
     {
         $db = $this->options['explicit_db'];
-        $table = new \Phinx\Db\Table('t', array(), $this->adapter);
+        $table = new \Phinx\Db\Table('t', array(), $this->adapter, $db);
         $table->addColumn('column1', 'string')
-              ->setDatabase($db)
               ->save();
         $this->assertTrue($this->adapter->hasColumn('t', 'column1', $db));
         $this->adapter->dropColumn('t', 'column1');
@@ -708,7 +703,6 @@ class MysqlAdapterTest extends \PHPUnit_Framework_TestCase
         }
     }
     
-
     public function testDescribeTable()
     {
         $table = new \Phinx\Db\Table('t', array(), $this->adapter);
@@ -727,26 +721,26 @@ class MysqlAdapterTest extends \PHPUnit_Framework_TestCase
     {
         $table = new \Phinx\Db\Table('group', array(), $this->adapter);
         $table->addColumn('column1', 'string')
-              ->addColumn('column2', 'integer')
-              ->addColumn('column3', 'biginteger')
-              ->addColumn('column4', 'text')
-              ->addColumn('column5', 'float')
-              ->addColumn('column6', 'decimal')
-              ->addColumn('column7', 'datetime')
-              ->addColumn('column8', 'time')
-              ->addColumn('column9', 'timestamp')
-              ->addColumn('column10', 'date')
-              ->addColumn('column11', 'binary')
-              ->addColumn('column12', 'boolean')
-              ->addColumn('column13', 'string', array('limit' => 10))
-              ->addColumn('column15', 'integer', array('limit' => 10))
-              ->addColumn('column16', 'geometry')
-              ->addColumn('column17', 'point')
-              ->addColumn('column18', 'linestring')
-              ->addColumn('column19', 'polygon')
-              ->addColumn('column20', 'uuid')
-              ->addColumn('column21', 'set', array('values' => "one, two"))
-              ->addColumn('column22', 'enum', array('values' => array('three', 'four')));
+            ->addColumn('column2', 'integer')
+            ->addColumn('column3', 'biginteger')
+            ->addColumn('column4', 'text')
+            ->addColumn('column5', 'float')
+            ->addColumn('column6', 'decimal')
+            ->addColumn('column7', 'datetime')
+            ->addColumn('column8', 'time')
+            ->addColumn('column9', 'timestamp')
+            ->addColumn('column10', 'date')
+            ->addColumn('column11', 'binary')
+            ->addColumn('column12', 'boolean')
+            ->addColumn('column13', 'string', array('limit' => 10))
+            ->addColumn('column15', 'integer', array('limit' => 10))
+            ->addColumn('column16', 'geometry')
+            ->addColumn('column17', 'point')
+            ->addColumn('column18', 'linestring')
+            ->addColumn('column19', 'polygon')
+            ->addColumn('column20', 'uuid')
+            ->addColumn('column21', 'set', array('values' => "one, two"))
+            ->addColumn('column22', 'enum', array('values' => array('three', 'four')));
         $pendingColumns = $table->getPendingColumns();
         $table->save();
         $columns = $this->adapter->getColumns('group');
@@ -755,11 +749,22 @@ class MysqlAdapterTest extends \PHPUnit_Framework_TestCase
             $this->assertEquals($pendingColumns[$i], $columns[$i+1]);
         }
     }
-
-
+    
     public function testAddIndex()
     {
         $table = new \Phinx\Db\Table('table1', array(), $this->adapter);
+        $table->addColumn('email', 'string')
+              ->save();
+        $this->assertFalse($table->hasIndex('email'));
+        $table->addIndex('email')
+              ->save();
+        $this->assertTrue($table->hasIndex('email'));
+    }
+
+    public function testAddIndexInExplicitDatabase()
+    {
+        $db = $this->options['explicit_db'];
+        $table = new \Phinx\Db\Table('table1', array(), $this->adapter, $db);
         $table->addColumn('email', 'string')
               ->save();
         $this->assertFalse($table->hasIndex('email'));
@@ -813,42 +818,38 @@ class MysqlAdapterTest extends \PHPUnit_Framework_TestCase
     {
         $db = $this->options['explicit_db'];
         // single column index
-        $table = new \Phinx\Db\Table('table1', array(), $this->adapter);
+        $table = new \Phinx\Db\Table('table1', array(), $this->adapter, $db);
         $table->addColumn('email', 'string')
               ->addIndex('email')
-              ->setDatabase($db)
               ->save();
         $this->assertTrue($table->hasIndex('email'));
         $this->adapter->dropIndex($table->getName(), 'email', $db);
         $this->assertFalse($table->hasIndex('email'));
 
         // multiple column index
-        $table2 = new \Phinx\Db\Table('table2', array(), $this->adapter);
+        $table2 = new \Phinx\Db\Table('table2', array(), $this->adapter, $db);
         $table2->addColumn('fname', 'string')
                ->addColumn('lname', 'string')
                ->addIndex(array('fname', 'lname'))
-               ->setDatabase($db)
                ->save();
         $this->assertTrue($table2->hasIndex(array('fname', 'lname')));
         $this->adapter->dropIndex($table2->getName(), array('fname', 'lname'), $db);
         $this->assertFalse($table2->hasIndex(array('fname', 'lname')));
 
         // index with name specified, but dropping it by column name
-        $table3 = new \Phinx\Db\Table('table3', array(), $this->adapter);
+        $table3 = new \Phinx\Db\Table('table3', array(), $this->adapter, $db);
         $table3->addColumn('email', 'string')
               ->addIndex('email', array('name' => 'someindexname'))
-              ->setDatabase($db)
               ->save();
         $this->assertTrue($table3->hasIndex('email'));
         $this->adapter->dropIndex($table3->getName(), 'email', $db);
         $this->assertFalse($table3->hasIndex('email'));
 
         // multiple column index with name specified
-        $table4 = new \Phinx\Db\Table('table4', array(), $this->adapter);
+        $table4 = new \Phinx\Db\Table('table4', array(), $this->adapter, $db);
         $table4->addColumn('fname', 'string')
                ->addColumn('lname', 'string')
                ->addIndex(array('fname', 'lname'), array('name' => 'multiname'))
-               ->setDatabase($db)
                ->save();
         $this->assertTrue($table4->hasIndex(array('fname', 'lname')));
         $this->adapter->dropIndex($table4->getName(), array('fname', 'lname'), $db);
@@ -881,21 +882,19 @@ class MysqlAdapterTest extends \PHPUnit_Framework_TestCase
     {
         $db = $this->options['explicit_db'];
         // single column index
-        $table = new \Phinx\Db\Table('table1', array(), $this->adapter);
+        $table = new \Phinx\Db\Table('table1', array(), $this->adapter, $db);
         $table->addColumn('email', 'string')
               ->addIndex('email', array('name' => 'myemailindex'))
-              ->setDatabase($db)
               ->save();
         $this->assertTrue($table->hasIndex('email'));
         $this->adapter->dropIndexByName($table->getName(), 'myemailindex', $db);
         $this->assertFalse($table->hasIndex('email'));
 
         // multiple column index
-        $table2 = new \Phinx\Db\Table('table2', array(), $this->adapter);
+        $table2 = new \Phinx\Db\Table('table2', array(), $this->adapter, $db);
         $table2->addColumn('fname', 'string')
                ->addColumn('lname', 'string')
                ->addIndex(array('fname', 'lname'), array('name' => 'twocolumnindex'))
-               ->setDatabase($db)
                ->save();
         $this->assertTrue($table2->hasIndex(array('fname', 'lname')));
         $this->adapter->dropIndexByName($table2->getName(), 'twocolumnindex', $db);
