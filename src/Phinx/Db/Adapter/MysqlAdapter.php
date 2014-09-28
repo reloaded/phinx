@@ -172,15 +172,16 @@ class MysqlAdapter extends PdoAdapter implements AdapterInterface
     /**
      * {@inheritdoc}
      */
-    public function hasTable($tableName)
+    public function hasTable($tableName, $database = null)
     {
         $options = $this->getOptions();
-
+        
+        $targetSchema = $database !== null ? $database : $options['name'];
         $exists = $this->fetchRow(sprintf(
             "SELECT TABLE_NAME
             FROM INFORMATION_SCHEMA.TABLES
             WHERE TABLE_SCHEMA = '%s' AND TABLE_NAME = '%s'",
-            $options['name'], $tableName
+            $targetSchema, $tableName
         ));
 
         return !empty($exists);
@@ -243,6 +244,12 @@ class MysqlAdapter extends PdoAdapter implements AdapterInterface
         }
 
         $sql = 'CREATE TABLE ';
+
+        if($table->hasExplicitDatabase())
+        {
+            $sql .= $this->quoteTableName($table->getDatabase()) . '.';
+        }
+
         $sql .= $this->quoteTableName($table->getName()) . ' (';
         foreach ($columns as $column) {
             $sql .= $this->quoteColumnName($column->getName()) . ' ' . $this->getColumnSqlDefinition($column) . ', ';
@@ -300,32 +307,47 @@ class MysqlAdapter extends PdoAdapter implements AdapterInterface
     /**
      * {@inheritdoc}
      */
-    public function renameTable($tableName, $newTableName)
+    public function renameTable($tableName, $newTableName, $sourceDatabase = null, $targetDatabase = null)
     {
         $this->startCommandTimer();
-        $this->writeCommand('renameTable', array($tableName, $newTableName));
-        $this->execute(sprintf('RENAME TABLE %s TO %s', $this->quoteTableName($tableName), $this->quoteTableName($newTableName)));
+        $this->writeCommand('renameTable', array($tableName, $newTableName, $sourceDatabase, $targetDatabase));
+
+        $sourceSchema = $sourceDatabase !== null ? $this->quoteTableName($sourceDatabase) . '.' : '';
+        $sourceSchema .= $this->quoteTableName($tableName);
+
+        $targetSchema = $targetDatabase !== null ? $this->quoteTableName($targetDatabase) . '.' : '';
+        $targetSchema .= $this->quoteTableName($newTableName);
+
+        $this->execute(sprintf('RENAME TABLE %s TO %s', $sourceSchema, $targetSchema));
         $this->endCommandTimer();
     }
 
     /**
      * {@inheritdoc}
      */
-    public function dropTable($tableName)
+    public function dropTable($tableName, $database = null)
     {
         $this->startCommandTimer();
-        $this->writeCommand('dropTable', array($tableName));
-        $this->execute(sprintf('DROP TABLE %s', $this->quoteTableName($tableName)));
+        $this->writeCommand('dropTable', array($tableName, $database));
+
+        $targetSchema = $database !== null ? $this->quoteTableName($database) . '.' : '';
+        $targetSchema .= $this->quoteTableName($tableName);
+
+        $this->execute(sprintf('DROP TABLE %s', $targetSchema));
         $this->endCommandTimer();
     }
 
     /**
      * {@inheritdoc}
      */
-    public function getColumns($tableName)
+    public function getColumns($tableName, $database = null)
     {
         $columns = array();
-        $rows = $this->fetchAll(sprintf('SHOW COLUMNS FROM %s', $this->quoteTableName($tableName)));
+
+        $targetSchema = $database !== null ? $this->quoteTableName($database) . '.' : '';
+        $targetSchema .= $this->quoteTableName($tableName);
+
+        $rows = $this->fetchAll(sprintf('SHOW COLUMNS FROM %s', $targetSchema));
         foreach ($rows as $columnInfo) {
 
             $phinxType = $this->getPhinxType($columnInfo['Type']);
@@ -350,9 +372,12 @@ class MysqlAdapter extends PdoAdapter implements AdapterInterface
     /**
      * {@inheritdoc}
      */
-    public function hasColumn($tableName, $columnName)
+    public function hasColumn($tableName, $columnName, $database = null)
     {
-        $rows = $this->fetchAll(sprintf('SHOW COLUMNS FROM %s', $this->quoteTableName($tableName)));
+        $targetSchema = $database !== null ? $this->quoteTableName($database) . '.' : '';
+        $targetSchema .= $this->quoteTableName($tableName);
+
+        $rows = $this->fetchAll(sprintf('SHOW COLUMNS FROM %s', $targetSchema));
         foreach ($rows as $column) {
             if (strcasecmp($column['Field'], $columnName) === 0) {
                 return true;
@@ -384,9 +409,13 @@ class MysqlAdapter extends PdoAdapter implements AdapterInterface
     public function addColumn(Table $table, Column $column)
     {
         $this->startCommandTimer();
+
+        $targetSchema = $table->hasExplicitDatabase() ? $this->quoteTableName($table->getDatabase()) . '.' : '';
+        $targetSchema .= $this->quoteTableName($table->getName());
+
         $sql = sprintf(
             'ALTER TABLE %s ADD %s %s',
-            $this->quoteTableName($table->getName()),
+            $targetSchema,
             $this->quoteColumnName($column->getName()),
             $this->getColumnSqlDefinition($column)
         );
@@ -403,10 +432,14 @@ class MysqlAdapter extends PdoAdapter implements AdapterInterface
     /**
      * {@inheritdoc}
      */
-    public function renameColumn($tableName, $columnName, $newColumnName)
+    public function renameColumn($tableName, $columnName, $newColumnName, $database = null)
     {
         $this->startCommandTimer();
-        $rows = $this->fetchAll(sprintf('DESCRIBE %s', $this->quoteTableName($tableName)));
+
+        $targetSchema = $database !== null ? $this->quoteTableName($database) . '.' : '';
+        $targetSchema .= $this->quoteTableName($tableName);
+
+        $rows = $this->fetchAll(sprintf('DESCRIBE %s', $targetSchema));
         foreach ($rows as $row) {
             if (strcasecmp($row['Field'], $columnName) === 0) {
                 $null = ($row['Null'] == 'NO') ? 'NOT NULL' : 'NULL';
@@ -420,7 +453,7 @@ class MysqlAdapter extends PdoAdapter implements AdapterInterface
                 $this->execute(
                     sprintf(
                         'ALTER TABLE %s CHANGE COLUMN %s %s %s',
-                        $this->quoteTableName($tableName),
+                        $targetSchema,
                         $this->quoteColumnName($columnName),
                         $this->quoteColumnName($newColumnName),
                         $definition
@@ -440,14 +473,18 @@ class MysqlAdapter extends PdoAdapter implements AdapterInterface
     /**
      * {@inheritdoc}
      */
-    public function changeColumn($tableName, $columnName, Column $newColumn)
+    public function changeColumn($tableName, $columnName, Column $newColumn, $database = null)
     {
         $this->startCommandTimer();
-        $this->writeCommand('changeColumn', array($tableName, $columnName, $newColumn->getType()));
+        $this->writeCommand('changeColumn', array($tableName, $columnName, $newColumn->getType(), $database));
+
+        $targetSchema = $database !== null ? $this->quoteTableName($database) . '.' : '';
+        $targetSchema .= $this->quoteTableName($tableName);
+
         $this->execute(
             sprintf(
                 'ALTER TABLE %s CHANGE %s %s %s',
-                $this->quoteTableName($tableName),
+                $targetSchema,
                 $this->quoteColumnName($columnName),
                 $this->quoteColumnName($newColumn->getName()),
                 $this->getColumnSqlDefinition($newColumn)
@@ -459,14 +496,18 @@ class MysqlAdapter extends PdoAdapter implements AdapterInterface
     /**
      * {@inheritdoc}
      */
-    public function dropColumn($tableName, $columnName)
+    public function dropColumn($tableName, $columnName, $database = null)
     {
         $this->startCommandTimer();
-        $this->writeCommand('dropColumn', array($tableName, $columnName));
+        $this->writeCommand('dropColumn', array($tableName, $columnName, $database));
+
+        $targetSchema = $database !== null ? $this->quoteTableName($database) . '.' : '';
+        $targetSchema .= $this->quoteTableName($tableName);
+
         $this->execute(
             sprintf(
                 'ALTER TABLE %s DROP COLUMN %s',
-                $this->quoteTableName($tableName),
+                $targetSchema,
                 $this->quoteColumnName($columnName)
             )
         );
@@ -477,12 +518,17 @@ class MysqlAdapter extends PdoAdapter implements AdapterInterface
      * Get an array of indexes from a particular table.
      *
      * @param string $tableName Table Name
+     * @param null|string $database Database Name
      * @return array
      */
-    protected function getIndexes($tableName)
+    protected function getIndexes($tableName, $database = null)
     {
         $indexes = array();
-        $rows = $this->fetchAll(sprintf('SHOW INDEXES FROM %s', $this->quoteTableName($tableName)));
+
+        $targetSchema = $database !== null ? $this->quoteTableName($database) . '.' : '';
+        $targetSchema .= $this->quoteTableName($tableName);
+
+        $rows = $this->fetchAll(sprintf('SHOW INDEXES FROM %s', $targetSchema));
         foreach ($rows as $row) {
             if (!isset($indexes[$row['Key_name']])) {
                 $indexes[$row['Key_name']] = array('columns' => array());
@@ -495,15 +541,15 @@ class MysqlAdapter extends PdoAdapter implements AdapterInterface
     /**
      * {@inheritdoc}
      */
-    public function hasIndex($tableName, $columns)
+    public function hasIndex($tableName, $columns, $database = null)
     {
         if (is_string($columns)) {
             $columns = array($columns); // str to array
         }
 
         $columns = array_map('strtolower', $columns);
-        $indexes = $this->getIndexes($tableName);
-
+        $indexes = $this->getIndexes($tableName, $database);
+        
         foreach ($indexes as $index) {
             $a = array_diff($columns, $index['columns']);
             if (empty($a)) {
@@ -520,11 +566,15 @@ class MysqlAdapter extends PdoAdapter implements AdapterInterface
     public function addIndex(Table $table, Index $index)
     {
         $this->startCommandTimer();
-        $this->writeCommand('addIndex', array($table->getName(), $index->getColumns()));
+        $this->writeCommand('addIndex', array($table->getDatabase(), $table->getName(), $index->getColumns()));
+
+        $targetSchema = $table->hasExplicitDatabase() ? $this->quoteTableName($table->getDatabase()) . '.' : '';
+        $targetSchema .= $this->quoteTableName($table->getName());
+
         $this->execute(
             sprintf(
                 'ALTER TABLE %s ADD %s',
-                $this->quoteTableName($table->getName()),
+                $targetSchema,
                 $this->getIndexSqlDefinition($index)
             )
         );
@@ -534,24 +584,27 @@ class MysqlAdapter extends PdoAdapter implements AdapterInterface
     /**
      * {@inheritdoc}
      */
-    public function dropIndex($tableName, $columns)
+    public function dropIndex($tableName, $columns, $database = null)
     {
         $this->startCommandTimer();
         if (is_string($columns)) {
             $columns = array($columns); // str to array
         }
-
-        $this->writeCommand('dropIndex', array($tableName, $columns));
-        $indexes = $this->getIndexes($tableName);
+        
+        $this->writeCommand('dropIndex', array($database, $tableName, $columns));
+        $indexes = $this->getIndexes($tableName, $database);
         $columns = array_map('strtolower', $columns);
 
+        $targetSchema = $database !== null ? $this->quoteTableName($database) . '.' : '';
+        $targetSchema .= $this->quoteTableName($tableName);
+        
         foreach ($indexes as $indexName => $index) {
             $a = array_diff($columns, $index['columns']);
             if (empty($a)) {
                 $this->execute(
                     sprintf(
                         'ALTER TABLE %s DROP INDEX %s',
-                        $this->quoteTableName($tableName),
+                        $targetSchema,
                         $this->quoteColumnName($indexName)
                     )
                 );
@@ -564,20 +617,23 @@ class MysqlAdapter extends PdoAdapter implements AdapterInterface
     /**
      * {@inheritdoc}
      */
-    public function dropIndexByName($tableName, $indexName)
+    public function dropIndexByName($tableName, $indexName, $database = null)
     {
         $this->startCommandTimer();
+        
+        $this->writeCommand('dropIndexByName', array($database, $tableName, $indexName));
+        $indexes = $this->getIndexes($tableName, $database);
 
-        $this->writeCommand('dropIndexByName', array($tableName, $indexName));
-        $indexes = $this->getIndexes($tableName);
-
+        $targetSchema = $database !== null ? $this->quoteTableName($database) . '.' : '';
+        $targetSchema .= $this->quoteTableName($tableName);
+        
         foreach ($indexes as $name => $index) {
             //$a = array_diff($columns, $index['columns']);
             if ($name === $indexName) {
                 $this->execute(
                     sprintf(
                         'ALTER TABLE %s DROP INDEX %s',
-                        $this->quoteTableName($tableName),
+                        $targetSchema,
                         $this->quoteColumnName($indexName)
                     )
                 );
@@ -590,12 +646,12 @@ class MysqlAdapter extends PdoAdapter implements AdapterInterface
     /**
      * {@inheritdoc}
      */
-    public function hasForeignKey($tableName, $columns, $constraint = null)
+    public function hasForeignKey($tableName, $columns, $constraint = null, $database = null)
     {
         if (is_string($columns)) {
             $columns = array($columns); // str to array
         }
-        $foreignKeys = $this->getForeignKeys($tableName);
+        $foreignKeys = $this->getForeignKeys($tableName, $database);
         if ($constraint) {
             if (isset($foreignKeys[$constraint])) {
                 return !empty($foreignKeys[$constraint]);
@@ -616,11 +672,15 @@ class MysqlAdapter extends PdoAdapter implements AdapterInterface
      * Get an array of foreign keys from a particular table.
      *
      * @param string $tableName Table Name
+     * @param null|string $database Database Name
      * @return array
      */
-    protected function getForeignKeys($tableName)
+    protected function getForeignKeys($tableName, $database = null)
     {
         $foreignKeys = array();
+
+        $targetDatabase = $database !== null ? "'{$database}'" : 'DATABASE()';
+
         $rows = $this->fetchAll(sprintf(
             "SELECT
               CONSTRAINT_NAME,
@@ -629,10 +689,11 @@ class MysqlAdapter extends PdoAdapter implements AdapterInterface
               REFERENCED_TABLE_NAME,
               REFERENCED_COLUMN_NAME
             FROM information_schema.KEY_COLUMN_USAGE
-            WHERE REFERENCED_TABLE_SCHEMA = DATABASE()
+            WHERE REFERENCED_TABLE_SCHEMA = %s
               AND REFERENCED_TABLE_NAME IS NOT NULL
               AND TABLE_NAME = '%s'
             ORDER BY POSITION_IN_UNIQUE_CONSTRAINT",
+            $targetDatabase,
             $tableName
         ));
         foreach ($rows as $row) {
@@ -650,11 +711,15 @@ class MysqlAdapter extends PdoAdapter implements AdapterInterface
     public function addForeignKey(Table $table, ForeignKey $foreignKey)
     {
         $this->startCommandTimer();
-        $this->writeCommand('addForeignKey', array($table->getName(), $foreignKey->getColumns()));
+        $this->writeCommand('addForeignKey', array($table->getDatabase(), $table->getName(), $foreignKey->getColumns()));
+
+        $targetSchema = $table->hasExplicitDatabase() ? $this->quoteTableName($table->getDatabase()) . '.' : '';
+        $targetSchema .= $this->quoteTableName($table->getName());
+
         $this->execute(
             sprintf(
                 'ALTER TABLE %s ADD %s',
-                $this->quoteTableName($table->getName()),
+                $targetSchema,
                 $this->getForeignKeySqlDefinition($foreignKey)
             )
         );
@@ -664,41 +729,47 @@ class MysqlAdapter extends PdoAdapter implements AdapterInterface
     /**
      * {@inheritdoc}
      */
-    public function dropForeignKey($tableName, $columns, $constraint = null)
+    public function dropForeignKey($tableName, $columns, $constraint = null, $database = null)
     {
         $this->startCommandTimer();
         if (is_string($columns)) {
             $columns = array($columns); // str to array
         }
-
-        $this->writeCommand('dropForeignKey', array($tableName, $columns));
-
+        
+        $this->writeCommand('dropForeignKey', array($database, $tableName, $columns));
+        
         if ($constraint) {
+            $targetSchema = $database !== null ? $this->quoteTableName($database) . '.' : '';
+            $targetSchema .= $this->quoteTableName($tableName);
+
             $this->execute(
                 sprintf(
                     'ALTER TABLE %s DROP FOREIGN KEY %s',
-                    $this->quoteTableName($tableName),
+                    $targetSchema,
                     $constraint
                 )
             );
             $this->endCommandTimer();
             return;
         } else {
+            $targetDatabase = $database !== null ? "'{$database}'" : 'DATABASE()';
+
             foreach ($columns as $column) {
                 $rows = $this->fetchAll(sprintf(
                     "SELECT
                         CONSTRAINT_NAME
                       FROM information_schema.KEY_COLUMN_USAGE
-                      WHERE REFERENCED_TABLE_SCHEMA = DATABASE()
+                      WHERE REFERENCED_TABLE_SCHEMA = %s
                         AND REFERENCED_TABLE_NAME IS NOT NULL
                         AND TABLE_NAME = '%s'
                         AND COLUMN_NAME = '%s'
                       ORDER BY POSITION_IN_UNIQUE_CONSTRAINT",
+                    $targetDatabase,
                     $tableName,
                     $column
                 ));
                 foreach ($rows as $row) {
-                    $this->dropForeignKey($tableName, $columns, $row['CONSTRAINT_NAME']);
+                    $this->dropForeignKey($tableName, $columns, $row['CONSTRAINT_NAME'], $database);
                 }
             }
         }
@@ -1044,9 +1115,12 @@ class MysqlAdapter extends PdoAdapter implements AdapterInterface
 
     /**
      * Describes a database table. This is a MySQL adapter specific method.
+     *
+     * @param string $tableName Table Name
+     * @param null|string $database Database Name
      * @return array
      */
-    public function describeTable($tableName)
+    public function describeTable($tableName, $database = null)
     {
         $options = $this->getOptions();
 
@@ -1056,7 +1130,7 @@ class MysqlAdapter extends PdoAdapter implements AdapterInterface
              FROM information_schema.tables
              WHERE table_schema = '%s'
              AND table_name = '%s'",
-            $options['name'],
+            $database !== null ? $database : $options['name'],
             $tableName
         );
 
