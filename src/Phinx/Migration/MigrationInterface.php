@@ -32,7 +32,6 @@ use Phinx\Db\Adapter\AdapterInterface;
 use Phinx\Db\Table;
 use Symfony\Component\Console\Output\OutputInterface;
 
-
 /**
  * Migration interface
  *
@@ -174,10 +173,11 @@ interface MigrationInterface
      * Checks to see if a table exists.
      *
      * @param string $tableName Table Name
+     * @param null|string $database Database Name
      * @return boolean
      */
-    public function hasTable($tableName);
-
+    public function hasTable($tableName, $database);
+    
     /**
      * Returns an instance of the <code>\Table</code> class.
      *
@@ -185,7 +185,8 @@ interface MigrationInterface
      *
      * @param string $tableName Table Name
      * @param array $options Options
+     * @param null|string $database Database Name
      * @return Table
      */
-    public function table($tableName, $options);
+    public function table($tableName, $options, $database);
 }
