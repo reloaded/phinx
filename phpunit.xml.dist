@@ -17,6 +17,7 @@
         <env name="TESTS_PHINX_DB_ADAPTER_SQLSRV_USERNAME" value="vagrant"/>
         <env name="TESTS_PHINX_DB_ADAPTER_SQLSRV_PASSWORD" value="vagrant"/>
         <env name="TESTS_PHINX_DB_ADAPTER_SQLSRV_DATABASE" value="test"/>
+        <env name="TESTS_PHINX_DB_ADAPTER_SQLSRV_DATABASE_EXPLICIT" value="test_explicit"/>
         <env name="TESTS_PHINX_DB_ADAPTER_SQLSRV_PORT" value="1433"/>
         <!-- MySQL -->
         <env name="TESTS_PHINX_DB_ADAPTER_MYSQL_ENABLED" value="true" />
@@ -24,6 +25,7 @@
         <env name="TESTS_PHINX_DB_ADAPTER_MYSQL_USERNAME" value="root" />
         <env name="TESTS_PHINX_DB_ADAPTER_MYSQL_PASSWORD" value="" />
         <env name="TESTS_PHINX_DB_ADAPTER_MYSQL_DATABASE" value="phinx_testing" />
+        <env name="TESTS_PHINX_DB_ADAPTER_MYSQL_DATABASE_EXPLICIT" value="phinx_testing_explicit" />
         <env name="TESTS_PHINX_DB_ADAPTER_MYSQL_PORT" value="3306" />
         <!-- PostgreSQL -->
         <env name="TESTS_PHINX_DB_ADAPTER_POSTGRES_ENABLED" value="true" />
@@ -31,11 +33,13 @@
         <env name="TESTS_PHINX_DB_ADAPTER_POSTGRES_USERNAME" value="postgres" />
         <env name="TESTS_PHINX_DB_ADAPTER_POSTGRES_PASSWORD" value="" />
         <env name="TESTS_PHINX_DB_ADAPTER_POSTGRES_DATABASE" value="phinx_testing" />
+        <env name="TESTS_PHINX_DB_ADAPTER_POSTGRES_DATABASE_EXPLICIT" value="phinx_testing_explicit" />
         <env name="TESTS_PHINX_DB_ADAPTER_POSTGRES_DATABASE_SCHEMA" value="public" />
         <env name="TESTS_PHINX_DB_ADAPTER_POSTGRES_PORT" value="5432" />
         <!-- SQLite -->
         <env name="TESTS_PHINX_DB_ADAPTER_SQLITE_ENABLED" value="true" />
         <env name="TESTS_PHINX_DB_ADAPTER_SQLITE_DATABASE" value="phinx_testing" />
+        <env name="TESTS_PHINX_DB_ADAPTER_SQLITE_DATABASE_EXPLICIT" value="phinx_testing_explicit" />
     </php>
 
     <testsuite name="Phinx Test Suite">
