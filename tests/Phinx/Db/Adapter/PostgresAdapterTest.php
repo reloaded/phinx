@@ -8,10 +8,10 @@ use Phinx\Db\Adapter\PostgresAdapter;
 class PostgresAdapterTest extends \PHPUnit_Framework_TestCase
 {
     /**
-     * @var \Phinx\Db\Adapter\PostgresqlAdapter
+     * @var \Phinx\Db\Adapter\PostgresAdapter
      */
     private $adapter;
-
+    
     public function setUp()
     {
         if (!TESTS_PHINX_DB_ADAPTER_POSTGRES_ENABLED) {
@@ -31,10 +31,14 @@ class PostgresAdapterTest extends \PHPUnit_Framework_TestCase
         $this->adapter->dropAllSchemas();
         $this->adapter->createSchema($options['schema']);
 
+        // these databases are used when testing methods that have
+        // an explicit database specified
+        $this->adapter->createSchema(TESTS_PHINX_DB_ADAPTER_POSTGRES_DATABASE_SCHEMA_EXPLICIT);
+        
         // leave the adapter in a disconnected state for each test
         $this->adapter->disconnect();
     }
-
+    
     public function tearDown()
     {
         if ($this->adapter) {
@@ -42,12 +46,12 @@ class PostgresAdapterTest extends \PHPUnit_Framework_TestCase
             unset($this->adapter);
         }
     }
-
+    
     public function testConnection()
     {
         $this->assertTrue($this->adapter->getConnection() instanceof \PDO);
     }
-
+    
     public function testConnectionWithoutPort()
     {
         $options = $this->adapter->getOptions();
@@ -55,7 +59,7 @@ class PostgresAdapterTest extends \PHPUnit_Framework_TestCase
         $this->adapter->setOptions($options);
         $this->assertTrue($this->adapter->getConnection() instanceof \PDO);
     }
-
+    
     public function testConnectionWithInvalidCredentials()
     {
         $options = array(
@@ -65,7 +69,7 @@ class PostgresAdapterTest extends \PHPUnit_Framework_TestCase
             'user' => 'invaliduser',
             'pass' => 'invalidpass'
         );
-
+        
         try {
             $adapter = new PostgresAdapter($options, new NullOutput());
             $adapter->connect();
@@ -122,6 +126,21 @@ class PostgresAdapterTest extends \PHPUnit_Framework_TestCase
         $this->assertFalse($this->adapter->hasColumn('ntable', 'address'));
     }
 
+    public function testCreateTableInExplicitDatabase()
+    {
+        $db = TESTS_PHINX_DB_ADAPTER_POSTGRES_DATABASE_SCHEMA_EXPLICIT;
+
+        $table = new \Phinx\Db\Table('ntable', array(), $this->adapter, $db);
+        $table->addColumn('realname', 'string')
+              ->addColumn('email', 'integer')
+              ->save();
+        $this->assertTrue($this->adapter->hasTable('ntable', $db));
+        $this->assertTrue($this->adapter->hasColumn('ntable', 'id', $db));
+        $this->assertTrue($this->adapter->hasColumn('ntable', 'realname', $db));
+        $this->assertTrue($this->adapter->hasColumn('ntable', 'email', $db));
+        $this->assertFalse($this->adapter->hasColumn('ntable', 'address', $db));
+    }
+          
     public function testCreateTableCustomIdColumn()
     {
         $table = new \Phinx\Db\Table('ntable', array('id' => 'custom_id'), $this->adapter);
@@ -159,6 +178,39 @@ class PostgresAdapterTest extends \PHPUnit_Framework_TestCase
         $this->assertTrue($this->adapter->hasIndex('table1', array('user_id', 'tag_id')));
         $this->assertTrue($this->adapter->hasIndex('table1', array('tag_id', 'USER_ID')));
         $this->assertFalse($this->adapter->hasIndex('table1', array('tag_id', 'user_email')));
+    }
+
+    public function testHasIndexInExplicitDatabase()
+    {
+        $db = TESTS_PHINX_DB_ADAPTER_POSTGRES_DATABASE_SCHEMA_EXPLICIT;
+        $options = array(
+            'id'            => false,
+            'primary_key'   => array('user_id', 'tag_id')
+        );
+        $table = new \Phinx\Db\Table('table1', $options, $this->adapter, $db);
+        $table->addColumn('user_id', 'integer')
+            ->addColumn('tag_id', 'integer')
+            ->save();
+        $this->assertTrue($this->adapter->hasIndex('table1', array('user_id', 'tag_id'), $db));
+        $this->assertTrue($this->adapter->hasIndex('table1', array('tag_id', 'USER_ID'), $db));
+        $this->assertFalse($this->adapter->hasIndex('table1', array('tag_id', 'user_email'), $db));
+    }
+
+    public function testCreateTableWithMultiplePrimaryKeysInExplicitDatabase()
+    {
+        $db = TESTS_PHINX_DB_ADAPTER_POSTGRES_DATABASE_SCHEMA_EXPLICIT;
+
+        $options = array(
+            'id'            => false,
+            'primary_key'   => array('user_id', 'tag_id')
+        );
+        $table = new \Phinx\Db\Table('table1', $options, $this->adapter, $db);
+        $table->addColumn('user_id', 'integer')
+              ->addColumn('tag_id', 'integer')
+              ->save();
+        $this->assertTrue($this->adapter->hasIndex('table1', array('user_id', 'tag_id'), $db));
+        $this->assertTrue($this->adapter->hasIndex('table1', array('tag_id', 'USER_ID'), $db));
+        $this->assertFalse($this->adapter->hasIndex('table1', array('tag_id', 'user_email'), $db));
     }
 
     public function testCreateTableWithMultipleIndexes()
@@ -206,6 +258,24 @@ class PostgresAdapterTest extends \PHPUnit_Framework_TestCase
         $this->assertTrue($this->adapter->hasTable('table2'));
     }
 
+    public function testRenameTableInExplicitDatabase()
+    {
+        $initialDb = TESTS_PHINX_DB_ADAPTER_POSTGRES_DATABASE_SCHEMA;
+        $explicitDb = TESTS_PHINX_DB_ADAPTER_POSTGRES_DATABASE_SCHEMA_EXPLICIT;
+
+        $table = new \Phinx\Db\Table('table1', array(), $this->adapter);
+        $table->save();
+        $this->assertTrue($this->adapter->hasTable('table1'));
+        $this->assertFalse($this->adapter->hasTable('table1', $explicitDb));
+        $this->assertFalse($this->adapter->hasTable('table2'));
+        $this->assertFalse($this->adapter->hasTable('table2', $explicitDb));
+        $this->adapter->renameTable('table1', 'table2', $initialDb, $explicitDb);
+        $this->assertFalse($this->adapter->hasTable('table1'));
+        $this->assertFalse($this->adapter->hasTable('table1', $explicitDb));
+        $this->assertFalse($this->adapter->hasTable('table2'));
+        $this->assertTrue($this->adapter->hasTable('table2', $explicitDb));
+    }
+    
     public function testAddColumn()
     {
         $table = new \Phinx\Db\Table('table1', array(), $this->adapter);
@@ -309,6 +379,19 @@ class PostgresAdapterTest extends \PHPUnit_Framework_TestCase
         $this->assertTrue($this->adapter->hasColumn('t', 'column2'));
     }
 
+    public function testRenameColumnInExplicitDatabase()
+    {
+        $db = TESTS_PHINX_DB_ADAPTER_POSTGRES_DATABASE_SCHEMA_EXPLICIT;
+        $table = new \Phinx\Db\Table('t', array(), $this->adapter, $db);
+        $table->addColumn('column1', 'string')
+            ->save();
+        $this->assertTrue($this->adapter->hasColumn('t', 'column1', $db));
+        $this->assertFalse($this->adapter->hasColumn('t', 'column2', $db));
+        $this->adapter->renameColumn('t', 'column1', 'column2', $db);
+        $this->assertFalse($this->adapter->hasColumn('t', 'column1', $db));
+        $this->assertTrue($this->adapter->hasColumn('t', 'column2', $db));
+    }
+    
     public function testRenamingANonExistentColumn()
     {
         $table = new \Phinx\Db\Table('t', array(), $this->adapter);
@@ -375,6 +458,26 @@ class PostgresAdapterTest extends \PHPUnit_Framework_TestCase
         }
     }
 
+    public function testChangeColumnInExplicitDatabase()
+    {
+        $db = TESTS_PHINX_DB_ADAPTER_POSTGRES_DATABASE_SCHEMA_EXPLICIT;
+        $table = new \Phinx\Db\Table('t', array(), $this->adapter, $db);
+        $table->addColumn('column1', 'string')
+            ->save();
+        $this->assertTrue($this->adapter->hasColumn('t', 'column1', $db));
+        $newColumn1 = new \Phinx\Db\Table\Column();
+        $newColumn1->setType('string');
+        $table->changeColumn('column1', $newColumn1);
+        $this->assertTrue($this->adapter->hasColumn('t', 'column1', $db));
+        $newColumn2 = new \Phinx\Db\Table\Column();
+        $newColumn2->setName('column2')
+            ->setType('string');
+        $table->changeColumn('column1', $newColumn2);
+        $this->assertFalse($this->adapter->hasColumn('t', 'column1', $db));
+        $this->assertTrue($this->adapter->hasColumn('t', 'column2', $db));
+    }
+    
+
     public function testChangeColumnWithDropDefault() {
         $table = new \Phinx\Db\Table('t', array(), $this->adapter);
         $table->addColumn('column1', 'string', array('default' => 'Test'))
@@ -411,6 +514,17 @@ class PostgresAdapterTest extends \PHPUnit_Framework_TestCase
         $this->assertFalse($this->adapter->hasColumn('t', 'column1'));
     }
 
+    public function testDropColumnInExplicitDatabase()
+    {
+        $db = TESTS_PHINX_DB_ADAPTER_POSTGRES_DATABASE_SCHEMA_EXPLICIT;
+        $table = new \Phinx\Db\Table('t', array(), $this->adapter, $db);
+        $table->addColumn('column1', 'string')
+            ->save();
+        $this->assertTrue($this->adapter->hasColumn('t', 'column1', $db));
+        $this->adapter->dropColumn('t', 'column1', $db);
+        $this->assertFalse($this->adapter->hasColumn('t', 'column1', $db));
+    }
+
     public function testGetColumns()
     {
         $table = new \Phinx\Db\Table('t', array(), $this->adapter);
@@ -431,11 +545,42 @@ class PostgresAdapterTest extends \PHPUnit_Framework_TestCase
         $table->save();
         $columns = $this->adapter->getColumns('t');
         $this->assertCount(count($pendingColumns) + 1, $columns);
-        for ($i = 0; $i++; $i < count($pendingColumns)) {
+        for ($i = 0; $i < count($pendingColumns); $i++) {
             $this->assertEquals($pendingColumns[$i], $columns[$i+1]);
         }
     }
 
+    public function testGetColumnsInExplicitDatabase()
+    {
+        $db = TESTS_PHINX_DB_ADAPTER_POSTGRES_DATABASE_SCHEMA_EXPLICIT;
+        $table = new \Phinx\Db\Table('t', array(), $this->adapter, $db);
+        $table->addColumn('column1', 'string')
+            ->addColumn('column2', 'integer')
+            ->addColumn('column3', 'biginteger')
+            ->addColumn('column4', 'text')
+            ->addColumn('column5', 'float')
+            ->addColumn('column6', 'decimal')
+            ->addColumn('column7', 'datetime')
+            ->addColumn('column8', 'time')
+            ->addColumn('column9', 'timestamp')
+            ->addColumn('column10', 'date')
+            ->addColumn('column11', 'binary')
+            ->addColumn('column12', 'boolean')
+            ->addColumn('column13', 'string', array('limit' => 10))
+            ->addColumn('column15', 'integer', array('limit' => 10))
+            ->addColumn('column16', 'geometry')
+            ->addColumn('column17', 'point')
+            ->addColumn('column18', 'linestring')
+            ->addColumn('column19', 'polygon');
+        $pendingColumns = $table->getPendingColumns();
+        $table->save();
+        $columns = $this->adapter->getColumns('t', $db);
+        $this->assertCount(count($pendingColumns) + 1, $columns);
+        for ($i = 0; $i < count($pendingColumns); $i++) {
+            $this->assertEquals($pendingColumns[$i], $columns[$i+1]);
+        }
+    }
+    
     public function testAddIndex()
     {
         $table = new \Phinx\Db\Table('table1', array(), $this->adapter);
@@ -447,6 +592,18 @@ class PostgresAdapterTest extends \PHPUnit_Framework_TestCase
         $this->assertTrue($table->hasIndex('email'));
     }
 
+    public function testAddIndexInExplicitDatabase()
+    {
+        $db = TESTS_PHINX_DB_ADAPTER_POSTGRES_DATABASE_SCHEMA_EXPLICIT;
+        $table = new \Phinx\Db\Table('table1', array(), $this->adapter, $db);
+        $table->addColumn('email', 'string')
+            ->save();
+        $this->assertFalse($table->hasIndex('email'));
+        $table->addIndex('email')
+            ->save();
+        $this->assertTrue($table->hasIndex('email'));
+    }
+    
     public function testDropIndex()
     {
          // single column index
@@ -488,6 +645,48 @@ class PostgresAdapterTest extends \PHPUnit_Framework_TestCase
         $this->assertFalse($table4->hasIndex(array('fname', 'lname')));
     }
 
+    public function testDropIndexInExplicitDatabase()
+    {
+        $db = TESTS_PHINX_DB_ADAPTER_POSTGRES_DATABASE_SCHEMA_EXPLICIT;
+        // single column index
+        $table = new \Phinx\Db\Table('table1', array(), $this->adapter, $db);
+        $table->addColumn('email', 'string')
+            ->addIndex('email')
+            ->save();
+        $this->assertTrue($table->hasIndex('email'));
+        $this->adapter->dropIndex($table->getName(), 'email', $db);
+        $this->assertFalse($table->hasIndex('email'));
+
+        // multiple column index
+        $table2 = new \Phinx\Db\Table('table2', array(), $this->adapter, $db);
+        $table2->addColumn('fname', 'string')
+            ->addColumn('lname', 'string')
+            ->addIndex(array('fname', 'lname'))
+            ->save();
+        $this->assertTrue($table2->hasIndex(array('fname', 'lname')));
+        $this->adapter->dropIndex($table2->getName(), array('fname', 'lname'), $db);
+        $this->assertFalse($table2->hasIndex(array('fname', 'lname')));
+
+        // index with name specified, but dropping it by column name
+        $table3 = new \Phinx\Db\Table('table3', array(), $this->adapter, $db);
+        $table3->addColumn('email', 'string')
+            ->addIndex('email', array('name' => 'someindexname'))
+            ->save();
+        $this->assertTrue($table3->hasIndex('email'));
+        $this->adapter->dropIndex($table3->getName(), 'email', $db);
+        $this->assertFalse($table3->hasIndex('email'));
+
+        // multiple column index with name specified
+        $table4 = new \Phinx\Db\Table('table4', array(), $this->adapter, $db);
+        $table4->addColumn('fname', 'string')
+            ->addColumn('lname', 'string')
+            ->addIndex(array('fname', 'lname'), array('name' => 'multiname'))
+            ->save();
+        $this->assertTrue($table4->hasIndex(array('fname', 'lname')));
+        $this->adapter->dropIndex($table4->getName(), array('fname', 'lname'), $db);
+        $this->assertFalse($table4->hasIndex(array('fname', 'lname')));
+    }
+    
     public function testDropIndexByName()
     {
         // single column index
@@ -508,6 +707,29 @@ class PostgresAdapterTest extends \PHPUnit_Framework_TestCase
                ->save();
         $this->assertTrue($table2->hasIndex(array('fname', 'lname')));
         $this->adapter->dropIndexByName($table2->getName(), 'twocolumnuniqueindex');
+        $this->assertFalse($table2->hasIndex(array('fname', 'lname')));
+    }
+
+    public function testDropIndexByNameInExplicitDatabase()
+    {
+        $db = TESTS_PHINX_DB_ADAPTER_POSTGRES_DATABASE_SCHEMA_EXPLICIT;
+        // single column index
+        $table = new \Phinx\Db\Table('table1', array(), $this->adapter, $db);
+        $table->addColumn('email', 'string')
+            ->addIndex('email', array('name' => 'myemailindex'))
+            ->save();
+        $this->assertTrue($table->hasIndex('email'));
+        $this->adapter->dropIndexByName($table->getName(), 'myemailindex', $db);
+        $this->assertFalse($table->hasIndex('email'));
+
+        // multiple column index
+        $table2 = new \Phinx\Db\Table('table2', array(), $this->adapter, $db);
+        $table2->addColumn('fname', 'string')
+            ->addColumn('lname', 'string')
+            ->addIndex(array('fname', 'lname'), array('name' => 'twocolumnindex'))
+            ->save();
+        $this->assertTrue($table2->hasIndex(array('fname', 'lname')));
+        $this->adapter->dropIndexByName($table2->getName(), 'twocolumnindex', $db);
         $this->assertFalse($table2->hasIndex(array('fname', 'lname')));
     }
 
