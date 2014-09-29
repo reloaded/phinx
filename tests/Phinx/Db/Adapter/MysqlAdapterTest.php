@@ -666,7 +666,7 @@ class MysqlAdapterTest extends \PHPUnit_Framework_TestCase
         $table->addColumn('column1', 'string')
               ->save();
         $this->assertTrue($this->adapter->hasColumn('t', 'column1', $db));
-        $this->adapter->dropColumn('t', 'column1');
+        $this->adapter->dropColumn('t', 'column1', $db);
         $this->assertFalse($this->adapter->hasColumn('t', 'column1', $db));
     }
 
@@ -698,7 +698,7 @@ class MysqlAdapterTest extends \PHPUnit_Framework_TestCase
         $table->save();
         $columns = $this->adapter->getColumns('t');
         $this->assertCount(count($pendingColumns) + 1, $columns);
-        for ($i = 0; $i++; $i < count($pendingColumns)) {
+        for ($i = 0; $i < count($pendingColumns); $i++) {
             $this->assertEquals($pendingColumns[$i], $columns[$i+1]);
         }
     }
@@ -745,7 +745,7 @@ class MysqlAdapterTest extends \PHPUnit_Framework_TestCase
         $table->save();
         $columns = $this->adapter->getColumns('group');
         $this->assertCount(count($pendingColumns) + 1, $columns);
-        for ($i = 0; $i++; $i < count($pendingColumns)) {
+        for ($i = 0; $i < count($pendingColumns); $i++) {
             $this->assertEquals($pendingColumns[$i], $columns[$i+1]);
         }
     }
