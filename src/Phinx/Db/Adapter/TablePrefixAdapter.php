@@ -54,10 +54,10 @@ class TablePrefixAdapter extends AdapterWrapper
     /**
      * {@inheritdoc}
      */
-    public function hasTable($tableName)
+    public function hasTable($tableName, $database = null)
     {
         $adapterTableName = $this->getAdapterTableName($tableName);
-        return parent::hasTable($adapterTableName);
+        return parent::hasTable($adapterTableName, $database);
     }
 
     /**
@@ -81,38 +81,38 @@ class TablePrefixAdapter extends AdapterWrapper
     /**
      * {@inheritdoc}
      */
-    public function renameTable($tableName, $newTableName)
+    public function renameTable($tableName, $newTableName, $sourceDatabase = null, $targetDatabase = null)
     {
         $adapterTableName = $this->getAdapterTableName($tableName);
         $adapterNewTableName = $this->getAdapterTableName($newTableName);
-        return parent::renameTable($adapterTableName, $adapterNewTableName);
+        return parent::renameTable($adapterTableName, $adapterNewTableName, $sourceDatabase, $targetDatabase);
     }
 
     /**
      * {@inheritdoc}
      */
-    public function dropTable($tableName)
+    public function dropTable($tableName, $database = null)
     {
         $adapterTableName = $this->getAdapterTableName($tableName);
-        return parent::dropTable($adapterTableName);
+        return parent::dropTable($adapterTableName, $database);
     }
 
     /**
      * {@inheritdoc}
      */
-    public function getColumns($tableName)
+    public function getColumns($tableName, $database = null)
     {
         $adapterTableName = $this->getAdapterTableName($tableName);
-        return parent::getColumns($adapterTableName);
+        return parent::getColumns($adapterTableName, $database);
     }
 
     /**
      * {@inheritdoc}
      */
-    public function hasColumn($tableName, $columnName)
+    public function hasColumn($tableName, $columnName, $database = null)
     {
         $adapterTableName = $this->getAdapterTableName($tableName);
-        return parent::hasColumn($adapterTableName, $columnName);
+        return parent::hasColumn($adapterTableName, $columnName, $database);
     }
 
     /**
@@ -129,37 +129,37 @@ class TablePrefixAdapter extends AdapterWrapper
     /**
      * {@inheritdoc}
      */
-    public function renameColumn($tableName, $columnName, $newColumnName)
+    public function renameColumn($tableName, $columnName, $newColumnName, $database = null)
     {
         $adapterTableName = $this->getAdapterTableName($tableName);
-        return parent::renameColumn($adapterTableName, $columnName, $newColumnName);
+        return parent::renameColumn($adapterTableName, $columnName, $newColumnName, $database);
     }
 
     /**
      * {@inheritdoc}
      */
-    public function changeColumn($tableName, $columnName, Column $newColumn)
+    public function changeColumn($tableName, $columnName, Column $newColumn, $database = null)
     {
         $adapterTableName = $this->getAdapterTableName($tableName);
-        return parent::changeColumn($adapterTableName, $columnName, $newColumn);
+        return parent::changeColumn($adapterTableName, $columnName, $newColumn, $database);
     }
 
     /**
      * {@inheritdoc}
      */
-    public function dropColumn($tableName, $columnName)
+    public function dropColumn($tableName, $columnName, $database = null)
     {
         $adapterTableName = $this->getAdapterTableName($tableName);
-        return parent::dropColumn($adapterTableName, $columnName);
+        return parent::dropColumn($adapterTableName, $columnName, $database);
     }
 
     /**
      * {@inheritdoc}
      */
-    public function hasIndex($tableName, $columns)
+    public function hasIndex($tableName, $columns, $database = null)
     {
         $adapterTableName = $this->getAdapterTableName($tableName);
-        return parent::hasIndex($adapterTableName, $columns);
+        return parent::hasIndex($adapterTableName, $columns, $database);
     }
 
     /**
@@ -185,19 +185,19 @@ class TablePrefixAdapter extends AdapterWrapper
     /**
      * {@inheritdoc}
      */
-    public function dropIndexByName($tableName, $indexName)
+    public function dropIndexByName($tableName, $indexName, $database = null)
     {
         $adapterTableName = $this->getAdapterTableName($tableName);
-        return parent::dropIndexByName($adapterTableName, $indexName);
+        return parent::dropIndexByName($adapterTableName, $indexName, $database);
     }
 
     /**
      * {@inheritdoc}
      */
-    public function hasForeignKey($tableName, $columns, $constraint = null)
+    public function hasForeignKey($tableName, $columns, $constraint = null, $database = null)
     {
         $adapterTableName = $this->getAdapterTableName($tableName);
-        return parent::hasForeignKey($adapterTableName, $columns, $constraint);
+        return parent::hasForeignKey($adapterTableName, $columns, $constraint, $database);
     }
 
     /**
@@ -214,10 +214,10 @@ class TablePrefixAdapter extends AdapterWrapper
     /**
      * {@inheritdoc}
      */
-    public function dropForeignKey($tableName, $columns, $constraint = null)
+    public function dropForeignKey($tableName, $columns, $constraint = null, $database = null)
     {
         $adapterTableName = $this->getAdapterTableName($tableName);
-        return parent::dropForeignKey($adapterTableName, $columns, $constraint);
+        return parent::dropForeignKey($adapterTableName, $columns, $constraint, $database);
     }
 
     /**
