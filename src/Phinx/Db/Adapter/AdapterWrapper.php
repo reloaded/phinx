@@ -273,9 +273,9 @@ abstract class AdapterWrapper implements AdapterInterface, WrapperInterface
     /**
      * {@inheritdoc}
      */
-    public function hasTable($tableName)
+    public function hasTable($tableName, $database = null)
     {
-        return $this->getAdapter()->hasTable($tableName);
+        return $this->getAdapter()->hasTable($tableName, $database);
     }
 
     /**
@@ -289,33 +289,33 @@ abstract class AdapterWrapper implements AdapterInterface, WrapperInterface
     /**
      * {@inheritdoc}
      */
-    public function renameTable($tableName, $newTableName)
+    public function renameTable($tableName, $newTableName, $sourceDatabase = null, $targetDatabase = null)
     {
-        return $this->getAdapter()->renameTable($tableName, $newTableName);
+        return $this->getAdapter()->renameTable($tableName, $newTableName, $sourceDatabase, $targetDatabase);
     }
 
     /**
      * {@inheritdoc}
      */
-    public function dropTable($tableName)
+    public function dropTable($tableName, $database = null)
     {
-        return $this->getAdapter()->dropTable($tableName);
+        return $this->getAdapter()->dropTable($tableName, $database);
     }
 
     /**
      * {@inheritdoc}
      */
-    public function getColumns($tableName)
+    public function getColumns($tableName, $database = null)
     {
-        return $this->getAdapter()->getColumns($tableName);
+        return $this->getAdapter()->getColumns($tableName, $database);
     }
 
     /**
      * {@inheritdoc}
      */
-    public function hasColumn($tableName, $columnName)
+    public function hasColumn($tableName, $columnName, $database = null)
     {
-        return $this->getAdapter()->hasColumn($tableName, $columnName);
+        return $this->getAdapter()->hasColumn($tableName, $columnName, $database);
     }
 
     /**
@@ -329,33 +329,33 @@ abstract class AdapterWrapper implements AdapterInterface, WrapperInterface
     /**
      * {@inheritdoc}
      */
-    public function renameColumn($tableName, $columnName, $newColumnName)
+    public function renameColumn($tableName, $columnName, $newColumnName, $database = null)
     {
-        return $this->getAdapter()->renameColumn($tableName, $columnName, $newColumnName);
+        return $this->getAdapter()->renameColumn($tableName, $columnName, $newColumnName, $database);
     }
 
     /**
      * {@inheritdoc}
      */
-    public function changeColumn($tableName, $columnName, Column $newColumn)
+    public function changeColumn($tableName, $columnName, Column $newColumn, $database = null)
     {
-        return $this->getAdapter()->changeColumn($tableName, $columnName, $newColumn);
+        return $this->getAdapter()->changeColumn($tableName, $columnName, $newColumn, $database);
     }
 
     /**
      * {@inheritdoc}
      */
-    public function dropColumn($tableName, $columnName)
+    public function dropColumn($tableName, $columnName, $database = null)
     {
-        return $this->getAdapter()->dropColumn($tableName, $columnName);
+        return $this->getAdapter()->dropColumn($tableName, $columnName, $database);
     }
 
     /**
      * {@inheritdoc}
      */
-    public function hasIndex($tableName, $columns)
+    public function hasIndex($tableName, $columns, $database = null)
     {
-        return $this->getAdapter()->hasIndex($tableName, $columns);
+        return $this->getAdapter()->hasIndex($tableName, $columns, $database);
     }
 
     /**
@@ -377,17 +377,17 @@ abstract class AdapterWrapper implements AdapterInterface, WrapperInterface
     /**
      * {@inheritdoc}
      */
-    public function dropIndexByName($tableName, $indexName)
+    public function dropIndexByName($tableName, $indexName, $database = null)
     {
-        return $this->getAdapter()->dropIndexByName($tableName, $indexName);
+        return $this->getAdapter()->dropIndexByName($tableName, $indexName, $database);
     }
 
     /**
      * {@inheritdoc}
      */
-    public function hasForeignKey($tableName, $columns, $constraint = null)
+    public function hasForeignKey($tableName, $columns, $constraint = null, $database = null)
     {
-        return $this->getAdapter()->hasForeignKey($tableName, $columns, $constraint);
+        return $this->getAdapter()->hasForeignKey($tableName, $columns, $constraint, $database);
     }
 
     /**
@@ -401,9 +401,9 @@ abstract class AdapterWrapper implements AdapterInterface, WrapperInterface
     /**
      * {@inheritdoc}
      */
-    public function dropForeignKey($tableName, $columns, $constraint = null)
+    public function dropForeignKey($tableName, $columns, $constraint = null, $database = null)
     {
-        return $this->getAdapter()->dropForeignKey($tableName, $columns, $constraint);
+        return $this->getAdapter()->dropForeignKey($tableName, $columns, $constraint, $database);
     }
 
     /**
