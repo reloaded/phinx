@@ -122,7 +122,7 @@ abstract class AdapterWrapper implements AdapterInterface, WrapperInterface
      */
     public function getOutput()
     {
-        return $this->adapter->getOutput($output);
+        return $this->adapter->getOutput();
     }
 
     /**
