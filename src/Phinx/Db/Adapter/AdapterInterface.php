@@ -391,7 +391,7 @@ interface AdapterInterface
      * @param null|string $database Database Name
      * @return boolean
      */
-    public function hasForeignKey($tableName, $columns, $constraint = null, $database);
+    public function hasForeignKey($tableName, $columns, $constraint = null, $database = null);
 
     /**
      * Adds the specified foreign key to a database table.
