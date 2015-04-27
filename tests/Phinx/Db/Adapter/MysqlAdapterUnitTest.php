@@ -2,6 +2,8 @@
 
 namespace Test\Phinx\Db\Adapter;
 
+use Phinx\Db\Table\Column;
+use Phinx\Db\Table\Index;
 use Symfony\Component\Console\Output\NullOutput;
 use Phinx\Db\Adapter\MysqlAdapter;
 
@@ -14,7 +16,7 @@ class PDOMock extends \PDO
 
 class MysqlAdapterTester extends MysqlAdapter
 {
-    public function setConnection($connection)
+    public function setConnection(\PDO $connection)
     {
         $this->connection = $connection;
     }
@@ -30,24 +32,24 @@ class MysqlAdapterTester extends MysqlAdapter
         return parent::getDefaultValueDefinition($default);
     }
 
-    public function getColumnSqlDefinition($column)
+    public function getColumnSqlDefinition(Column $column)
     {
         return parent::getColumnSqlDefinition($column);
     }
 
-    public function getIndexSqlDefinition($index)
+    public function getIndexSqlDefinition(Index $index)
     {
         return parent::getIndexSqlDefinition($index);
     }
 
-    public function getIndexes($tableName)
+    public function getIndexes($tableName, $database = null)
     {
-        return parent::getIndexes($tableName);
+        return parent::getIndexes($tableName, $database);
     }
 
-    public function getForeignKeys($tableName)
+    public function getForeignKeys($tableName, $database = null)
     {
-        return parent::getForeignKeys($tableName);
+        return parent::getForeignKeys($tableName, $database);
     }
 }
 
@@ -991,7 +993,7 @@ class MysqlAdapterUnitTest extends \PHPUnit_Framework_TestCase
 
         $index->expects($this->any())->method('getColumns')->will($this->returnValue(array('column_name')));
         $index->expects($this->any())->method('getName')->will($this->returnValue('index_name'));
-        $index->expects($this->any())->method('getType')->will($this->returnValue(\Phinx\Db\Table\Index::INDEX));
+        $index->expects($this->any())->method('getType')->will($this->returnValue(Index::INDEX));
         $this->assertEquals(' KEY `index_name` (`column_name`)', $this->adapter->getIndexSqlDefinition($index));
     }
 
@@ -1004,7 +1006,7 @@ class MysqlAdapterUnitTest extends \PHPUnit_Framework_TestCase
 
         $index->expects($this->any())->method('getColumns')->will($this->returnValue(array('column_name')));
         $index->expects($this->any())->method('getName')->will($this->returnValue('index_name'));
-        $index->expects($this->any())->method('getType')->will($this->returnValue(\Phinx\Db\Table\Index::UNIQUE));
+        $index->expects($this->any())->method('getType')->will($this->returnValue(Index::UNIQUE));
         $this->assertEquals(' UNIQUE KEY `index_name` (`column_name`)', $this->adapter->getIndexSqlDefinition($index));
     }
 
