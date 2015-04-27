@@ -66,17 +66,17 @@ class ProxyAdapter extends AdapterWrapper
     /**
      * {@inheritdoc}
      */
-    public function renameTable($tableName, $newTableName)
+    public function renameTable($tableName, $newTableName, $sourceDatabase = null, $targetDatabase = null)
     {
-        $this->recordCommand('renameTable', array($tableName, $newTableName));
+        $this->recordCommand('renameTable', array($tableName, $newTableName, $sourceDatabase, $targetDatabase));
     }
 
     /**
      * {@inheritdoc}
      */
-    public function dropTable($tableName)
+    public function dropTable($tableName, $database = null)
     {
-        $this->recordCommand('dropTable', array($tableName));
+        $this->recordCommand('dropTable', array($tableName, $database));
     }
 
     /**
@@ -90,25 +90,25 @@ class ProxyAdapter extends AdapterWrapper
     /**
      * {@inheritdoc}
      */
-    public function renameColumn($tableName, $columnName, $newColumnName)
+    public function renameColumn($tableName, $columnName, $newColumnName, $database = null)
     {
-        $this->recordCommand('renameColumn', array($tableName, $columnName, $newColumnName));
+        $this->recordCommand('renameColumn', array($tableName, $columnName, $newColumnName, $database));
     }
 
     /**
      * {@inheritdoc}
      */
-    public function changeColumn($tableName, $columnName, Column $newColumn)
+    public function changeColumn($tableName, $columnName, Column $newColumn, $database = null)
     {
-        $this->recordCommand('changeColumn', array($tableName, $columnName, $newColumn));
+        $this->recordCommand('changeColumn', array($tableName, $columnName, $newColumn, $database));
     }
 
     /**
      * {@inheritdoc}
      */
-    public function dropColumn($tableName, $columnName)
+    public function dropColumn($tableName, $columnName, $database = null)
     {
-        $this->recordCommand('dropColumn', array($tableName, $columnName));
+        $this->recordCommand('dropColumn', array($tableName, $columnName, $database));
     }
 
     /**
@@ -130,9 +130,9 @@ class ProxyAdapter extends AdapterWrapper
     /**
      * {@inheritdoc}
      */
-    public function dropIndexByName($tableName, $indexName)
+    public function dropIndexByName($tableName, $indexName, $database = null)
     {
-        $this->recordCommand('dropIndexByName', array($tableName, $indexName));
+        $this->recordCommand('dropIndexByName', array($tableName, $indexName, $database));
     }
 
     /**
@@ -146,9 +146,9 @@ class ProxyAdapter extends AdapterWrapper
     /**
      * {@inheritdoc}
      */
-    public function dropForeignKey($tableName, $columns, $constraint = null)
+    public function dropForeignKey($tableName, $columns, $constraint = null, $database = null)
     {
-        $this->recordCommand('dropForeignKey', array($columns, $constraint));
+        $this->recordCommand('dropForeignKey', array($columns, $constraint, $database));
     }
 
     /**
